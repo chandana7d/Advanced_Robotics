@@ -126,20 +126,36 @@ class ValueIteration(object):
         Next values given by the Bellman equation
 
         :return np.ndarray with the values for each state, shape (num_states,)
-        For the maximum entropy policy, to compute the unnormalized probabilities make sure:
-                                    1) Before computing the exponientated value substract the maximum value per state
-                                       over all the actions.
-                                    2) Add self.eps to them
         """
+        num_states = self.transitions.shape[0]
+        num_actions = self.transitions.shape[1]
 
-        """ INSERT YOUR CODE HERE"""
+        next_v = np.zeros(num_states)
+
         if self.policy_type == 'deterministic':
-            raise NotImplementedError
+            # Bellman update for deterministic policies
+            for s in range(num_states):
+                v_s = np.zeros(num_actions)
+                for a in range(num_actions):
+                    # Compute the expected value for action a in state s
+                    v_s[a] = np.sum(
+                        self.transitions[s, a] * (self.rewards[s, a] + self.discount * self.value_fun.get_values()))
+                # Take the action with the maximum value
+                next_v[s] = np.max(v_s)
+
         elif self.policy_type == 'max_ent':
-            raise NotImplementedError
-            """ Your code ends here"""
-        else:
-            raise NotImplementedError
+            # Bellman update for maximum entropy policies
+            for s in range(num_states):
+                v_s = np.zeros(num_actions)
+                for a in range(num_actions):
+                    # Compute the expected value for action a in state s
+                    v_s[a] = np.sum(
+                        self.transitions[s, a] * (self.rewards[s, a] + self.discount * self.value_fun.get_values()))
+                # Subtract max value for numerical stability
+                v_s -= np.max(v_s)
+                # Compute the softmax with temperature
+                next_v[s] = np.log(np.sum(np.exp(v_s / self.temperature))) * self.temperature
+
         return next_v
 
     def get_next_policy(self):
@@ -147,20 +163,34 @@ class ValueIteration(object):
         Next policy probabilities given by the Bellman equation
 
         :return np.ndarray with the policy probabilities for each state and actions, shape (num_states, num_actions)
-        For the maximum entropy policy, to compute the unnormalized probabilities make sure:
-                                    1) Before computing the exponientated value substract the maximum value per state
-                                       over all the actions.
-                                    2) Add self.eps to them
         """
+        num_states = self.transitions.shape[0]
+        num_actions = self.transitions.shape[1]
 
-        """INSERT YOUR CODE HERE"""
+        pi = np.zeros((num_states, num_actions))
+
         if self.policy_type == 'deterministic':
-            raise NotImplementedError
+            # Deterministic policy: choose the action that maximizes the value
+            for s in range(num_states):
+                v_s = np.zeros(num_actions)
+                for a in range(num_actions):
+                    v_s[a] = np.sum(
+                        self.transitions[s, a] * (self.rewards[s, a] + self.discount * self.value_fun.get_values()))
+                best_action = np.argmax(v_s)
+                pi[s, best_action] = 1.0
+
         elif self.policy_type == 'max_ent':
-            raise NotImplementedError
-            """ Your code ends here"""
-        else:
-            raise NotImplementedError
+            # Maximum entropy policy: use softmax over actions
+            for s in range(num_states):
+                v_s = np.zeros(num_actions)
+                for a in range(num_actions):
+                    v_s[a] = np.sum(
+                        self.transitions[s, a] * (self.rewards[s, a] + self.discount * self.value_fun.get_values()))
+                v_s -= np.max(v_s)  # Numerical stability
+                softmax_probs = np.exp(v_s / self.temperature)
+                softmax_probs /= np.sum(softmax_probs)
+                pi[s, :] = softmax_probs
+
         return pi
 
     def _stop_condition(self, itr, next_v, v):
