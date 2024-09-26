@@ -1,10 +1,18 @@
 import argparse
 import os
 import logger
+
+
 import json
+import sys
+import os
 
 
-def main(args):
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+print(sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+def main(args, part1=None, utils=None):
     render = args.render
     if not render:
         import matplotlib
